@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DollarSign, Calendar, User, TrendingUp, Clock, Target, Award, Plus, ChevronLeft, ChevronRight, Coffee, Beer, ShoppingBag, Utensils, X, Check, Edit2, Trash2, Search, Filter } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function SpendhenApp() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -6329,6 +6330,7 @@ export default function SpendhenApp() {
           </div>
         </>
       )}
+      <Analytics />
     </div>
   );
 }
