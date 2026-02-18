@@ -11,7 +11,7 @@
 SpendHen is a personal passion project exploring the personal finance space. Instead of forcing users into rigid budgeting systems, it lets them choose their "savings intensity" — from minimal tracking to aggressive goal-setting.
 
 **Why I Built This:**  
-I noticed existing finance apps are very technical and formulaic, oftentimes focusing entirely on the raw numbers. SpendHen adapts to how you *actually* want to manage your spending, keeping you accountable, but maintaining flexibility for the user. Meant for college students with a variety of responsibilities, the app is meant to teach stronger spending habits early on to those who may not be as educated.
+I noticed existing finance apps are very technical and formulaic, oftentimes focusing entirely on the raw numbers. SpendHen adapts to how you *actually* want to manage your spending, keeping you accountable, but maintaining flexibility for the user. Meant for college students with a variety of responsibilities, the app is being developed to teach stronger spending habits early on to those who may not be as educated.
 ---
 
 ## ✨ Key Features
