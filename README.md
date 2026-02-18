@@ -2,7 +2,7 @@
 
 > A personal finance management app that adapts to your saving style
 
-[🔗 Live Demo](#) *(Deployment coming soon)*
+[🔗 Live Demo](#) *(https://spendhen-finance-4lyhuznl2-achint-eswars-projects.vercel.app/)*
 
 ---
 
