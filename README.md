@@ -140,7 +140,7 @@ Designing the payday prediction algorithm to handle edge cases:
 **Solution:** Used modular arithmetic for day-based frequencies and date comparison for monthly intervals.
 
 ### Key Learning
-Balancing feature richness with UI simplicity requires ruthless prioritization. The folder pattern emerged after realizing a flat list of 10+ categories felt overwhelming. The Income/Expenses folders came from users who wanted a clear distinction between "money coming in" and "money going out." Additionally, balancing design and utility is a very fine line, as the end product needs to aesthetically fit a certain mold, but still maintain high level of functionality.
+Balancing feature richness with simplicity requires defined prioritization. Certain implementations arose after key surveying and research were done, for example, the folder pattern emerged after realizing a flat list of 10+ categories felt overwhelming. The Income/Expenses folders came from users who wanted a clear distinction between "money coming in" and "money going out." Additionally, balancing design and utility is a very fine line, as the end product needs to aesthetically fit a certain mold, but still maintain a high level of functionality.
 
 ### What I'd Do Differently
 Start with an even more defined structure. Create a strong white paper indicating my key goals and how to achieve them. From there, build a cohesive path towards the creation of various facets of the application. 
