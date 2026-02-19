@@ -2,7 +2,7 @@
 
 > Personal finance app designed for college students | **In Active Development**
 
-**[🔗 Live Demo](https://spendhen-finance-app.vercel.app)** **On start-up -- User: demo / Pass: demo123**
+**[Live Demo](https://spendhen-finance-app.vercel.app)** **On start-up -- User: demo / Pass: demo123**
 
 ---
 
