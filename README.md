@@ -1,4 +1,4 @@
-# SpendHen 🐔💰
+# SpendHen
 
 > Personal finance app designed for college students | **In Active Development**
 
@@ -6,23 +6,23 @@
 
 ---
 
-## ⚠️ Project Status & Ownership
+## Project Status & Ownership
 
 **Development Status:** Phase 1 Complete | Phases 2-6 In Progress  
-**Timeline:** December 2025 – Present
+**Timeline:** January 2026 – Present
 
 **© 2026 Achint Eswar.** This project is shared publicly for **portfolio and professional showcase purposes**. The code is viewable for educational purposes, but remains my intellectual property. Please do not copy, modify, or redistribute without explicit permission.
 
 ---
 
-## 📊 Project Overview
+## Project Overview
 
 Built as a **personal development project** to explore the intersection of finance and technology. SpendHen addresses gaps in traditional budgeting apps by adapting to different financial management styles—from minimal tracking to aggressive saving. 
 
 **Why Public?** Transparency in the development process and to showcase work.
 ---
 
-## ✨ Current Features (Phase 1 - Completed)
+## Current Features (Phase 1 - Completed)
 
 ### Adaptive Budgeting System
 Five customizable saving plans (Coasting → Steady → Balanced → Focused → Full Grind) that adjust feature visibility based on user's financial management intensity.
@@ -31,7 +31,7 @@ Five customizable saving plans (Coasting → Steady → Balanced → Focused →
 - Multi-party expense splitting with automatic share calculation
 - Real-time balance tracking (owed to you / you owe)
 - One-click settlement system
-- Visual indicators throughout the interface (🔀 Split with...)
+- Visual indicators throughout the interface (Split with...)
 
 ### Income Management
 - Recurring income tracking (daily, weekly, biweekly, monthly, custom frequencies)
@@ -52,7 +52,7 @@ Five customizable saving plans (Coasting → Steady → Balanced → Focused →
 
 ---
 
-## 🚧 In Development (Phases 2-6)
+## In Development (Phases 2-6)
 
 **Phase 2:** Meal plan tracking with burn rate analysis  
 **Phase 3:** Textbook budget planning with seasonal reminders  
@@ -62,7 +62,7 @@ Five customizable saving plans (Coasting → Steady → Balanced → Focused →
 
 ---
 
-## 🛠️ Technical Implementation
+## Technical Implementation
 
 **Tech Stack:**
 - React 18 with hooks-based state management
@@ -80,7 +80,7 @@ Five customizable saving plans (Coasting → Steady → Balanced → Focused →
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 ### Plan Selection
 *Choose your savings approach from 5 intensity levels*
@@ -104,7 +104,7 @@ Five customizable saving plans (Coasting → Steady → Balanced → Focused →
 
 ---
 
-## 💡 Why I Built This
+## Why I Built This
 
 As a college student with a **finance background**, I noticed several gaps in existing personal finance apps:
 
@@ -116,7 +116,7 @@ SpendHen explores how technology can make personal finance more **adaptive** and
 
 ---
 
-## 🎓 What I Learned
+## What I Learned
 
 **Technical Skills:**
 - Complex state management without external libraries
@@ -136,7 +136,7 @@ SpendHen explores how technology can make personal finance more **adaptive** and
 
 ---
 
-## 🚀 Try It Live
+## Try It Live
 
 **Live Demo:** https://spendhen-finance-app.vercel.app
 
@@ -150,7 +150,7 @@ SpendHen explores how technology can make personal finance more **adaptive** and
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 ```
 spendhen-finance-app/
 ├── src/
@@ -165,7 +165,7 @@ spendhen-finance-app/
 
 ---
 
-## 🔮 Development Roadmap
+## Development Roadmap
 
 Detailed roadmap available in repository (SPENDHEN_ROADMAP.md) covering:
 - Complete feature specifications for Phases 2-6
@@ -175,7 +175,7 @@ Detailed roadmap available in repository (SPENDHEN_ROADMAP.md) covering:
 
 ---
 
-## 📬 Contact
+## Contact
 
 **Achint Eswar**  
 - GitHub: [github.com/achintesw](https://github.com/achintesw)
