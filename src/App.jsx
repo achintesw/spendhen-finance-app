@@ -3176,7 +3176,7 @@ export default function SpendhenApp() {
                 </div>
               ) : (
                 filteredExpenses.map(expense => {
-            const percentage = (expense.spent / expense.limit) * 100;
+            const percentage = (expense.spent / getAdjustedLimit(expense.limit)) * 100;
             const isOverBudget = percentage > 100;
             const progressColor = getProgressColor(expense.spent, expense.limit);
             const Icon = expense.icon;
@@ -3287,6 +3287,11 @@ export default function SpendhenApp() {
                           background: 'white'
                         }}
                       />
+{selectedScheme && getAdjustedLimit(expense.limit) < expense.limit && (
+  <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#8b5cf6', fontWeight: '600', fontFamily: '"Inter", sans-serif' }}>
+    Scheme active: Adjusted limit ${getAdjustedLimit(expense.limit)}
+  </p>
+)}
                     </div>
 
                     <div style={{ marginBottom: '16px' }}>
@@ -3513,6 +3518,28 @@ export default function SpendhenApp() {
                           color: '#6b7280',
                           fontFamily: '"Inter", sans-serif'
                         }}>spent</p>
+<div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '4px' }}>
+  <p style={{
+    margin: 0,
+    fontSize: '11px',
+    color: '#6b7280',
+    fontFamily: '"Inter", sans-serif'
+  }}>
+    Limit: ${expense.limit}
+  </p>
+  {selectedScheme && getAdjustedLimit(expense.limit) < expense.limit && (
+    <p style={{
+      margin: 0,
+      fontSize: '11px',
+      color: '#8b5cf6',
+      fontWeight: '600',
+      fontFamily: '"Inter", sans-serif'
+    }}>
+      → ${getAdjustedLimit(expense.limit)}
+    </p>
+  )}
+</div>
+
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <p style={{
@@ -4725,11 +4752,24 @@ export default function SpendhenApp() {
       perks: ['Daily spend check-ins', 'Strict category limits', 'Aggressive goal timelines']
     }
   ];
+// Scheme budget multipliers
+const SCHEME_MULTIPLIERS = {
+  'coasting': 1.0,
+  'steady': 0.95,
+  'balanced': 0.85,
+  'focused': 0.75,
+  'grind': 0.65
+};
 
+// Get adjusted limit based on active scheme
+const getAdjustedLimit = (baseLimit) => {
+  if (!selectedScheme) return baseLimit;
+  const multiplier = SCHEME_MULTIPLIERS[selectedScheme] || 1.0;
+  return Math.round(baseLimit * multiplier);
+};
   const renderGoalsPage = () => {
     const activeGoals = savingsGoals.filter(goal => selectedGoals.includes(goal.id));
     const schemes = SCHEMES;
-
     if (schemeView === 'goals') {
       return (
         <div style={{ paddingBottom: '120px' }}>
@@ -4740,6 +4780,7 @@ export default function SpendhenApp() {
             borderRadius: '0 0 24px 24px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)'
           }}>
+
             <button
               onClick={() => setSchemeView('home')}
               style={{
