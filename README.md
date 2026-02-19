@@ -9,7 +9,7 @@
 ## ⚠️ Project Status & Ownership
 
 **Development Status:** Phase 1 Complete | Phases 2-6 In Progress  
-**Timeline:** February 2026 – Present
+**Timeline:** December 2025 – Present
 
 **© 2026 Achint Eswar.** This project is shared publicly for **portfolio and professional showcase purposes**. The code is viewable for educational purposes, but remains my intellectual property. Please do not copy, modify, or redistribute without explicit permission.
 
