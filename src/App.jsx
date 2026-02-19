@@ -3425,6 +3425,27 @@ export default function SpendhenApp() {
                           fontWeight: '600',
                           color: '#1f2937'
                         }}>{expense.category}</h3>
+{/* Split Indicator */}
+{expense.isSplit && expense.splitWith && expense.splitWith.length > 0 && (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginTop: '4px',
+    fontSize: '11px',
+    color: '#8b5cf6',
+    fontWeight: '600',
+    fontFamily: '"Inter", sans-serif'
+  }}>
+    <span style={{ fontSize: '14px' }}>🔀</span>
+    <span>
+      Split with {expense.splitWith.map(id => {
+        const roommate = roommates.find(r => r.id === id);
+        return roommate ? roommate.name.split(' ')[0] : '';
+      }).filter(Boolean).join(', ')}
+    </span>
+  </div>
+)}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <p style={{
                             margin: 0,
@@ -6315,6 +6336,39 @@ export default function SpendhenApp() {
                  'All settled up'}
               </p>
             </div>
+{/* Settlement Button */}
+{balance.theyOwe > 0 && (
+  <button
+    onClick={() => {
+      // Mark all split expenses with this roommate as settled
+      setExpenses(expenses.map(exp => {
+        if (exp.isSplit && exp.splitWith?.includes(roommate.id)) {
+          return {
+            ...exp,
+            settlementStatus: {
+              ...exp.settlementStatus,
+              [roommate.id]: 'settled'
+            }
+          };
+        }
+        return exp;
+      }));
+    }}
+    style={{
+      padding: '6px 12px',
+      borderRadius: '8px',
+      border: 'none',
+      background: '#10b981',
+      color: 'white',
+      fontSize: '12px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      fontFamily: '"Inter", sans-serif'
+    }}
+  >
+    ✓ Settle Up
+  </button>
+)}
           </div>
           <button
             onClick={() => handleRemoveRoommate(roommate.id)}
