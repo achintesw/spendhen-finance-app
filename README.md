@@ -106,13 +106,13 @@ Five customizable saving plans (Coasting → Steady → Balanced → Focused →
 
 ## 💡 Why I Built This
 
-As someone with a **finance background**, I noticed several gaps in existing personal finance apps:
+As a college student with a **finance background**, I noticed several gaps in existing personal finance apps:
 
 1. **Rigid Methodologies:** Most apps force a single budgeting approach (envelope budgeting, zero-based, etc.) without adapting to user preferences
 2. **College-Specific Challenges Ignored:** Roommate expense splits, meal plans, textbook budgets, and irregular income are barely addressed
 3. **Punishment Over Education:** Apps highlight failures without teaching financial principles
 
-SpendHen explores how technology can make personal finance more **adaptive** and **educational** rather than prescriptive.
+SpendHen explores how technology can make personal finance more **adaptive** and **educational** rather than prescriptive,  focusing on college students' spending and saving strategies.
 
 ---
 
