@@ -54,7 +54,30 @@ export default function SpendhenApp() {
   ]);
   const [showAddRoommate, setShowAddRoommate] = useState(false);
   const [newRoommateName, setNewRoommateName] = useState('');
-  
+  // PHASE 2: Meal Plan Tracking
+const [mealPlan, setMealPlan] = useState({
+  diningDollars: 500,
+  diningDollarsUsed: 0,
+  mealSwipes: 150,
+  mealSwipesUsed: 0,
+  semesterStart: '2025-01-15',
+  semesterEnd: '2025-05-15'
+});
+const [showMealPlanSettings, setShowMealPlanSettings] = useState(false);
+// PHASE 3: Textbook Budget
+const [textbookBudget, setTextbookBudget] = useState({
+  semesterBudget: 300,
+  books: []
+});
+const [showTextbookSettings, setShowTextbookSettings] = useState(false);
+// PHASE 4: Irregular Income Display
+const [showIncomeBreakdown, setShowIncomeBreakdown] = useState(false);
+const [incomeInsights, setIncomeInsights] = useState({
+  showVarianceWarning: true,
+  showProjections: true
+});
+const [showAddBook, setShowAddBook] = useState(false);
+const [newBook, setNewBook] = useState({ title: '', price: '', status: 'needed' });
   // Finance page folder states
   const [activeFolder, setActiveFolder] = useState(null); // null, 'income', 'expenses'
   const [showAddIncome, setShowAddIncome] = useState(false);
@@ -1702,7 +1725,100 @@ export default function SpendhenApp() {
       setShowAddRoommate(false);
     }
   };
+// PHASE 2: Meal plan burn rate calculator
+const getMealPlanBurnRate = () => {
+  const today = new Date();
+  const semStart = new Date(mealPlan.semesterStart);
+  const semEnd = new Date(mealPlan.semesterEnd);
+  const totalDays = (semEnd - semStart) / (1000 * 60 * 60 * 24);
+  const daysElapsed = Math.max((today - semStart) / (1000 * 60 * 60 * 24), 1); // avoid div/0
+  const daysRemaining = Math.max(totalDays - daysElapsed, 0);
 
+  const dollarsPerDay = mealPlan.diningDollarsUsed / daysElapsed;
+  const swipesPerWeek = (mealPlan.mealSwipesUsed / daysElapsed) * 7;
+  const expectedDollarsUsed = (mealPlan.diningDollars / totalDays) * daysElapsed;
+  const expectedSwipesUsed = (mealPlan.mealSwipes / totalDays) * daysElapsed;
+
+  return {
+    dollarsPerDay,
+    swipesPerWeek,
+    dollarsOnPace: mealPlan.diningDollarsUsed <= expectedDollarsUsed,
+    swipesOnPace: mealPlan.mealSwipesUsed <= expectedSwipesUsed,
+    daysRemaining: Math.round(daysRemaining),
+    dollarProjection: dollarsPerDay * totalDays,
+    swipeProjection: (swipesPerWeek / 7) * totalDays
+  };
+};
+
+const handleUseDiningDollars = (amount) => {
+  setMealPlan(prev => ({ ...prev, diningDollarsUsed: prev.diningDollarsUsed + amount }));
+};
+
+const handleUseMealSwipe = () => {
+	setMealPlan(prev => ({ ...prev, mealSwipesUsed: prev.mealSwipesUsed + 1 }));
+};
+// PHASE 3: Textbook Budget helpers
+const getTextbookTotals = () => {
+  const totalSpent = textbookBudget.books
+    .filter(b => b.status === 'purchased' || b.status === 'rented')
+    .reduce((sum, b) => sum + parseFloat(b.price || 0), 0);
+  const totalNeeded = textbookBudget.books
+    .filter(b => b.status === 'needed')
+    .reduce((sum, b) => sum + parseFloat(b.price || 0), 0);
+  const remaining = textbookBudget.semesterBudget - totalSpent;
+  return { totalSpent, totalNeeded, remaining };
+};
+
+const handleAddBook = () => {
+  if (newBook.title.trim() && newBook.price) {
+    setTextbookBudget(prev => ({
+      ...prev,
+      books: [...prev.books, { id: Date.now(), ...newBook, price: parseFloat(newBook.price) }]
+    }));
+    setNewBook({ title: '', price: '', status: 'needed' });
+    setShowAddBook(false);
+  }
+};
+
+const handleRemoveBook = (id) => {
+  setTextbookBudget(prev => ({ ...prev, books: prev.books.filter(b => b.id !== id) }));
+};
+
+const handleUpdateBookStatus = (id, status) => {
+  setTextbookBudget(prev => ({
+    ...prev,
+    books: prev.books.map(b => b.id === id ? { ...b, status } : b)
+  }));
+};
+// PHASE 4: Irregular Income helpers
+const getIncomeVariance = () => {
+  if (incomeEntries.length < 2) return null;
+
+  const amounts = incomeEntries.map(e => parseFloat(e.amount || 0));
+  const avg = amounts.reduce((sum, a) => sum + a, 0) / amounts.length;
+  const variance = amounts.reduce((sum, a) => sum + Math.pow(a - avg, 2), 0) / amounts.length;
+  const stdDev = Math.sqrt(variance);
+  const min = Math.min(...amounts);
+  const max = Math.max(...amounts);
+
+  return {
+    avg,
+    stdDev,
+    min,
+    max,
+    isVariable: stdDev / avg > 0.1,
+    entries: incomeEntries
+  };
+};
+const getMonthlyIncomeProjection = () => {
+  const variance = getIncomeVariance();
+  if (!variance) return null;
+  return {
+    low: variance.avg - variance.stdDev,
+    expected: variance.avg,
+    high: variance.avg + variance.stdDev
+  };
+};
   const handleRemoveRoommate = (roommateId) => {
     setRoommates(roommates.filter(r => r.id !== roommateId));
   };
@@ -2146,6 +2262,55 @@ export default function SpendhenApp() {
                 fontFamily: '"Inter", sans-serif'
               }}>Monthly</p>
             </div>
+{/* PHASE 4: Income Insights */}
+{(() => {
+  const variance = getIncomeVariance();
+  const projection = getMonthlyIncomeProjection();
+  if (!variance) return null;
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderRadius: '16px', padding: '18px', marginTop: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid rgba(255,255,255,0.5)', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Income Insights</p>
+        {variance.isVariable && (
+          <span style={{ fontSize: '12px', background: '#fef3c7', color: '#d97706', padding: '3px 8px', borderRadius: '999px', fontWeight: '600' }}>⚠️ Variable Income</span>
+        )}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '16px', width: '100%' }}>
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#10b981' }}>${variance.avg.toFixed(0)}</p>
+          <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>Avg Income</p>
+        </div>
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#3b82f6' }}>${variance.min.toFixed(0)}</p>
+          <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>Lowest</p>
+        </div>
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#8b5cf6' }}>${variance.max.toFixed(0)}</p>
+          <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>Highest</p>
+        </div>
+      </div>
+      {projection && (
+        <div style={{ background: '#f9fafb', borderRadius: '12px', padding: '12px', width: '100%', }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>NEXT MONTH PROJECTION</p>
+          <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%', }}>
+            <div style={{ textAlign: 'center', }}>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#ef4444' }}>${Math.max(0, projection.low).toFixed(0)}</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>Low</p>
+            </div>
+            <div style={{ textAlign: 'center', }}>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#10b981' }}>${projection.expected.toFixed(0)}</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>Expected</p>
+            </div>
+            <div style={{ textAlign: 'center', }}>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#8b5cf6' }}>${projection.high.toFixed(0)}</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>High</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+})()}
           </div>
         </div>
       </div>
@@ -2464,6 +2629,377 @@ export default function SpendhenApp() {
                   <ChevronRight size={24} color="#6b7280" strokeWidth={2} />
                 </div>
               </div>
+{/* PHASE 3: Textbook Budget */}
+{(() => {
+  const totals = getTextbookTotals();
+  const spentPercent = (totals.totalSpent / textbookBudget.semesterBudget) * 100;
+
+  return (
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.7)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginTop: '16px',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+      border: '1px solid rgba(255, 255, 255, 0.5)'
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            📚 Textbook Budget
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => setShowAddBook(true)}
+            style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            + Add Book
+          </button>
+          <button
+            onClick={() => setShowTextbookSettings(true)}
+            style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            ⚙️
+          </button>
+        </div>
+      </div>
+
+      {/* Budget Progress */}
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <span style={{ fontWeight: '600', fontSize: '15px' }}>Semester Budget</span>
+          <span style={{ fontWeight: '700', color: totals.remaining < 0 ? '#ef4444' : '#8b5cf6' }}>
+            ${totals.remaining.toFixed(2)} left
+          </span>
+        </div>
+        <div style={{ background: '#f3f4f6', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
+          <div style={{
+            width: `${Math.min(spentPercent, 100)}%`,
+            background: spentPercent > 90 ? '#ef4444' : spentPercent > 70 ? '#f59e0b' : '#8b5cf6',
+            height: '100%', borderRadius: '999px', transition: 'width 0.3s'
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>${totals.totalSpent.toFixed(2)} spent</span>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>${totals.totalNeeded.toFixed(2)} still needed</span>
+        </div>
+      </div>
+
+      {/* Book List */}
+      {textbookBudget.books.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', margin: '16px 0' }}>
+          No books added yet. Click + Add Book to start.
+        </p>
+      ) : (
+        textbookBudget.books.map(book => (
+          <div key={book.id} style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '10px 12px', borderRadius: '10px', marginBottom: '8px',
+            background: book.status === 'purchased' ? '#f0fdf4' : book.status === 'rented' ? '#eff6ff' : '#fafafa',
+            border: '1px solid #e5e7eb'
+          }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontWeight: '600', fontSize: '14px' }}>{book.title}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>${parseFloat(book.price).toFixed(2)}</p>
+            </div>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              {['needed', 'rented', 'purchased'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => handleUpdateBookStatus(book.id, s)}
+                  style={{
+                    padding: '3px 7px', borderRadius: '6px', border: 'none',
+                    fontSize: '11px', cursor: 'pointer', fontWeight: book.status === s ? '700' : '400',
+                    background: book.status === s ? (s === 'purchased' ? '#10b981' : s === 'rented' ? '#3b82f6' : '#f59e0b') : '#e5e7eb',
+                    color: book.status === s ? 'white' : '#6b7280'
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+              <button
+                onClick={() => handleRemoveBook(book.id)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '16px', marginLeft: '4px' }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+
+      {/* Add Book Modal */}
+      {showAddBook && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '80vh', overflowY: 'auto', marginBottom: '80px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>📚 Add Book</h3>
+              <button onClick={() => setShowAddBook(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>Book Title</label>
+              <input
+                type="text"
+                placeholder="e.g. Calculus 8th Edition"
+                value={newBook.title}
+                onChange={(e) => setNewBook(prev => ({ ...prev, title: e.target.value }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>Price ($)</label>
+              <input
+                type="number"
+                placeholder="e.g. 85"
+                value={newBook.price}
+                onChange={(e) => setNewBook(prev => ({ ...prev, price: e.target.value }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>Status</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['needed', 'rented', 'purchased'].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setNewBook(prev => ({ ...prev, status: s }))}
+                    style={{
+                      flex: 1, padding: '8px', borderRadius: '8px', border: 'none',
+                      cursor: 'pointer', fontWeight: newBook.status === s ? '700' : '400',
+                      background: newBook.status === s ? '#8b5cf6' : '#e5e7eb',
+                      color: newBook.status === s ? 'white' : '#6b7280', fontSize: '13px'
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={handleAddBook}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: '#8b5cf6', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px' }}
+            >
+              Add Book
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showTextbookSettings && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>⚙️ Textbook Settings</h3>
+              <button onClick={() => setShowTextbookSettings(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>Semester Textbook Budget ($)</label>
+              <input
+                type="number"
+                value={textbookBudget.semesterBudget}
+                onChange={(e) => setTextbookBudget(prev => ({ ...prev, semesterBudget: parseFloat(e.target.value) || 0 }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <button
+              onClick={() => setShowTextbookSettings(false)}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: '#8b5cf6', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px' }}
+            >
+              Save & Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+})()}
+{/* PHASE 2: Meal Plan Section */}
+{(() => {
+  const burnRate = getMealPlanBurnRate();
+  const dollarsLeft = mealPlan.diningDollars - mealPlan.diningDollarsUsed;
+  const swipesLeft = mealPlan.mealSwipes - mealPlan.mealSwipesUsed;
+  const dollarsPercent = (mealPlan.diningDollarsUsed / mealPlan.diningDollars) * 100;
+  const swipesPercent = (mealPlan.mealSwipesUsed / mealPlan.mealSwipes) * 100;
+
+  return (
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.7)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginTop: '16px',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+      border: '1px solid rgba(255, 255, 255, 0.5)'
+    }}>
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+<p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+  🍽️ Dining & Meal Plan
+</p>
+  <button
+    onClick={() => setShowMealPlanSettings(true)}
+    style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}
+  >
+    ⚙️ Settings
+  </button>
+</div>
+
+      {/* Dining Dollars */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <span style={{ fontWeight: '600', fontSize: '15px' }}>Dining Dollars</span>
+          <span style={{ fontWeight: '700', color: dollarsLeft < 50 ? '#ef4444' : '#10b981' }}>
+            ${dollarsLeft.toFixed(2)} left
+          </span>
+        </div>
+        <div style={{ background: '#f3f4f6', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
+          <div style={{
+            width: `${Math.min(dollarsPercent, 100)}%`,
+            background: dollarsPercent > 80 ? '#ef4444' : dollarsPercent > 60 ? '#f59e0b' : '#10b981',
+            height: '100%',
+            borderRadius: '999px',
+            transition: 'width 0.3s'
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>
+            ${burnRate.dollarsPerDay.toFixed(2)}/day
+            {!burnRate.dollarsOnPace && ' ⚠️ Spending too fast'}
+          </span>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>{dollarsPercent.toFixed(0)}% used</span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+          {[5, 10, 15].map(amt => (
+            <button
+              key={amt}
+              onClick={() => handleUseDiningDollars(amt)}
+              style={{
+                flex: 1, padding: '6px', borderRadius: '8px', border: 'none',
+                background: '#f0fdf4', color: '#10b981', fontWeight: '600',
+                cursor: 'pointer', fontSize: '13px'
+              }}
+            >
+              -${amt}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Meal Swipes */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <span style={{ fontWeight: '600', fontSize: '15px' }}>Meal Swipes</span>
+          <span style={{ fontWeight: '700', color: swipesLeft < 10 ? '#ef4444' : '#8b5cf6' }}>
+            {swipesLeft} left
+          </span>
+        </div>
+        <div style={{ background: '#f3f4f6', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
+          <div style={{
+            width: `${Math.min(swipesPercent, 100)}%`,
+            background: swipesPercent > 80 ? '#ef4444' : swipesPercent > 60 ? '#f59e0b' : '#8b5cf6',
+            height: '100%',
+            borderRadius: '999px',
+            transition: 'width 0.3s'
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>
+            {burnRate.swipesPerWeek.toFixed(1)}/week
+            {!burnRate.swipesOnPace && ' ⚠️ Using too fast'}
+          </span>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>{swipesPercent.toFixed(0)}% used</span>
+        </div>
+        <button
+          onClick={handleUseMealSwipe}
+          style={{
+            width: '100%', marginTop: '10px', padding: '8px', borderRadius: '10px',
+            border: 'none', background: '#f5f3ff', color: '#8b5cf6',
+            fontWeight: '600', cursor: 'pointer', fontSize: '14px'
+          }}
+        >
+          + Use Swipe
+        </button>
+      </div>
+{/* Meal Plan Settings Modal */}
+{showMealPlanSettings && (
+  <div style={{
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  }}>
+    <div style={{
+      background: 'white', borderRadius: '20px', padding: '28px',
+      width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+  <h3 style={{ margin: 0 }}>⚙️ Meal Plan Settings</h3>
+  <button
+    onClick={() => setShowMealPlanSettings(false)}
+    style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}
+  >
+    ✕
+  </button>
+</div>
+      {[
+        { label: 'Dining Dollars Balance', key: 'diningDollars' },
+        { label: 'Dining Dollars Used', key: 'diningDollarsUsed' },
+        { label: 'Total Meal Swipes', key: 'mealSwipes' },
+        { label: 'Meal Swipes Used', key: 'mealSwipesUsed' },
+      ].map(({ label, key }) => (
+        <div key={key} style={{ marginBottom: '14px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{label}</label>
+          <input
+            type="number"
+            value={mealPlan[key]}
+            onChange={(e) => setMealPlan(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: '10px',
+              border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      ))}
+      {[
+        { label: 'Semester Start', key: 'semesterStart' },
+        { label: 'Semester End', key: 'semesterEnd' },
+      ].map(({ label, key }) => (
+        <div key={key} style={{ marginBottom: '14px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{label}</label>
+          <input
+            type="date"
+            value={mealPlan[key]}
+            onChange={(e) => setMealPlan(prev => ({ ...prev, [key]: e.target.value }))}
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: '10px',
+              border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      ))}
+      <button
+        onClick={() => setShowMealPlanSettings(false)}
+        style={{
+          width: '100%', padding: '12px', borderRadius: '12px', border: 'none',
+          background: '#10b981', color: 'white', fontWeight: '700',
+          cursor: 'pointer', fontSize: '15px', marginTop: '4px'
+        }}
+      >
+        Save & Close
+      </button>
+    </div>
+  </div>
+)}
+    </div>
+  );
+})()}
             </div>
           ) : activeFolder === 'income' ? (
             /* Income View */
@@ -6428,6 +6964,66 @@ const getAdjustedLimit = (baseLimit) => {
   </div>
 </div>
 
+{/* Meal Plan Settings Modal */}
+{showMealPlanSettings && (
+  <div style={{
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  }}>
+    <div style={{
+      background: 'white', borderRadius: '20px', padding: '28px',
+      width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+    }}>
+      <h3 style={{ margin: '0 0 20px' }}>⚙️ Meal Plan Settings</h3>
+      {[
+        { label: 'Dining Dollars Balance', key: 'diningDollars', prefix: '$' },
+        { label: 'Dining Dollars Used', key: 'diningDollarsUsed', prefix: '$' },
+        { label: 'Total Meal Swipes', key: 'mealSwipes' },
+        { label: 'Meal Swipes Used', key: 'mealSwipesUsed' },
+      ].map(({ label, key, prefix }) => (
+        <div key={key} style={{ marginBottom: '14px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{label}</label>
+          <input
+            type="number"
+            value={mealPlan[key]}
+            onChange={(e) => setMealPlan(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: '10px',
+              border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      ))}
+      {[
+        { label: 'Semester Start', key: 'semesterStart' },
+        { label: 'Semester End', key: 'semesterEnd' },
+      ].map(({ label, key }) => (
+        <div key={key} style={{ marginBottom: '14px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{label}</label>
+          <input
+            type="date"
+            value={mealPlan[key]}
+            onChange={(e) => setMealPlan(prev => ({ ...prev, [key]: e.target.value }))}
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: '10px',
+              border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      ))}
+      <button
+        onClick={() => setShowMealPlanSettings(false)}
+        style={{
+          width: '100%', padding: '12px', borderRadius: '12px', border: 'none',
+          background: '#10b981', color: 'white', fontWeight: '700',
+          cursor: 'pointer', fontSize: '15px', marginTop: '4px'
+        }}
+      >
+        Save & Close
+      </button>
+    </div>
+  </div>
+)}
 {/* Add Roommate Modal */}
 {showAddRoommate && (
   <div style={{
