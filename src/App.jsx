@@ -72,6 +72,7 @@ const [textbookBudget, setTextbookBudget] = useState({
 const [showTextbookSettings, setShowTextbookSettings] = useState(false);
 // PHASE 4: Irregular Income Display
 const [showIncomeBreakdown, setShowIncomeBreakdown] = useState(false);
+const [showVariableIncomeModal, setShowVariableIncomeModal] = useState(false);
 const [incomeInsights, setIncomeInsights] = useState({
   showVarianceWarning: true,
   showProjections: true
@@ -2183,7 +2184,7 @@ const getMonthlyIncomeProjection = () => {
           </div>
 
           {/* Stats Grid with Prominent Colors */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div style={{
               gridColumn: '1 / -1',
               background: 'rgba(16, 185, 129, 0.1)',
@@ -2262,17 +2263,23 @@ const getMonthlyIncomeProjection = () => {
                 fontFamily: '"Inter", sans-serif'
               }}>Monthly</p>
             </div>
+          </div>
 {/* PHASE 4: Income Insights */}
 {(() => {
   const variance = getIncomeVariance();
   const projection = getMonthlyIncomeProjection();
   if (!variance) return null;
   return (
-    <div style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderRadius: '16px', padding: '18px', marginTop: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid rgba(255,255,255,0.5)', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderRadius: '16px', padding: '18px', marginTop: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid rgba(255,255,255,0.5)', boxSizing: 'border-box', gridColumn: '1 / -1' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Income Insights</p>
         {variance.isVariable && (
-          <span style={{ fontSize: '12px', background: '#fef3c7', color: '#d97706', padding: '3px 8px', borderRadius: '999px', fontWeight: '600' }}>⚠️ Variable Income</span>
+          <span
+  onClick={() => setShowVariableIncomeModal(true)}
+  style={{ fontSize: '12px', background: '#fef3c7', color: '#d97706', padding: '3px 8px', borderRadius: '999px', fontWeight: '600', cursor: 'pointer' }}
+>
+  ⚠️ Variable Income
+</span>
         )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '16px', width: '100%' }}>
@@ -2290,8 +2297,8 @@ const getMonthlyIncomeProjection = () => {
         </div>
       </div>
       {projection && (
-        <div style={{ background: '#f9fafb', borderRadius: '12px', padding: '12px', width: '100%', }}>
-          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>NEXT MONTH PROJECTION</p>
+        <div style={{ background: '#f9fafb', borderRadius: '12px', padding: '10px', width: '100%', }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#6b7280', textAlign: 'center' }}>NEXT MONTH PROJECTION</p>
           <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%', }}>
             <div style={{ textAlign: 'center', }}>
               <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#ef4444' }}>${Math.max(0, projection.low).toFixed(0)}</p>
@@ -2308,10 +2315,30 @@ const getMonthlyIncomeProjection = () => {
           </div>
         </div>
       )}
+{showVariableIncomeModal && (
+  <div style={{
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  }}>
+    <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h3 style={{ margin: 0 }}>⚠️ Variable Income</h3>
+        <button onClick={() => setShowVariableIncomeModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
+      </div>
+      <p style={{ margin: '0 0 12px', fontSize: '14px', color: '#374151', lineHeight: '1.5' }}>
+        Your income varies significantly between payments. Your highest payment (${variance.max}) and lowest (${variance.min}) differ by ${(variance.max - variance.min).toFixed(0)}.
+      </p>
+      <div style={{ background: '#fef3c7', borderRadius: '12px', padding: '12px' }}>
+        <p style={{ margin: 0, fontSize: '13px', color: '#d97706', fontWeight: '600' }}>
+          💡 Tip: Budget based on your lowest expected income (${variance.min}) to avoid overspending in lean months.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 })()}
-          </div>
         </div>
       </div>
     );
