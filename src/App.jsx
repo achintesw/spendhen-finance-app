@@ -64,6 +64,10 @@ const [mealPlan, setMealPlan] = useState({
   semesterEnd: '2025-05-15'
 });
 const [showMealPlanSettings, setShowMealPlanSettings] = useState(false);
+const [coachingEnabled, setCoachingEnabled] = useState(true);
+const [coachingStyle, setCoachingStyle] = useState('friendly');
+const [spendingStreak, setSpendingStreak] = useState(0);
+const [coachingMessage, setCoachingMessage] = useState(null);
 // PHASE 3: Textbook Budget
 const [textbookBudget, setTextbookBudget] = useState({
   semesterBudget: 300,
