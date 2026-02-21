@@ -73,6 +73,20 @@ const [showTextbookSettings, setShowTextbookSettings] = useState(false);
 // PHASE 4: Irregular Income Display
 const [showIncomeBreakdown, setShowIncomeBreakdown] = useState(false);
 const [showVariableIncomeModal, setShowVariableIncomeModal] = useState(false);
+// PHASE 5: Student Loan Awareness
+const [studentLoans, setStudentLoans] = useState([
+  {
+    id: 1,
+    name: 'Federal Loan',
+    balance: 25000,
+    interestRate: 5.5,
+    minimumPayment: 250,
+    monthlyPayment: 250
+  }
+]);
+const [showAddLoan, setShowAddLoan] = useState(false);
+const [showLoanDetails, setShowLoanDetails] = useState(null);
+const [newLoan, setNewLoan] = useState({ name: '', balance: '', interestRate: '', minimumPayment: '', monthlyPayment: '' });
 const [incomeInsights, setIncomeInsights] = useState({
   showVarianceWarning: true,
   showProjections: true
@@ -1820,6 +1834,49 @@ const getMonthlyIncomeProjection = () => {
     high: variance.avg + variance.stdDev
   };
 };
+// PHASE 5: Student Loan Awareness helpers
+const getLoanPayoffInfo = (loan) => {
+  const monthlyRate = loan.interestRate / 100 / 12;
+  const payment = loan.monthlyPayment;
+  const balance = loan.balance;
+  
+  if (monthlyRate === 0) return { months: Math.ceil(balance / payment), totalInterest: 0 };
+  
+  const months = Math.ceil(-Math.log(1 - (monthlyRate * balance) / payment) / Math.log(1 + monthlyRate));
+  const totalPaid = payment * months;
+  const totalInterest = totalPaid - balance;
+  
+  const minMonths = Math.ceil(-Math.log(1 - (monthlyRate * balance) / loan.minimumPayment) / Math.log(1 + monthlyRate));
+  const minTotalInterest = (loan.minimumPayment * minMonths) - balance;
+
+  return {
+    months,
+    totalInterest: Math.max(0, totalInterest),
+    minMonths,
+    minTotalInterest: Math.max(0, minTotalInterest),
+    interestSaved: Math.max(0, minTotalInterest - totalInterest),
+    monthsSaved: Math.max(0, minMonths - months)
+  };
+};
+
+const handleAddLoan = () => {
+  if (newLoan.name.trim() && newLoan.balance && newLoan.interestRate) {
+    setStudentLoans(prev => [...prev, {
+      id: Date.now(),
+      name: newLoan.name.trim(),
+      balance: parseFloat(newLoan.balance),
+      interestRate: parseFloat(newLoan.interestRate),
+      minimumPayment: parseFloat(newLoan.minimumPayment),
+      monthlyPayment: parseFloat(newLoan.monthlyPayment || newLoan.minimumPayment)
+    }]);
+    setNewLoan({ name: '', balance: '', interestRate: '', minimumPayment: '', monthlyPayment: '' });
+    setShowAddLoan(false);
+  }
+};
+
+const handleRemoveLoan = (id) => {
+  setStudentLoans(prev => prev.filter(l => l.id !== id));
+};
   const handleRemoveRoommate = (roommateId) => {
     setRoommates(roommates.filter(r => r.id !== roommateId));
   };
@@ -2758,13 +2815,47 @@ const getMonthlyIncomeProjection = () => {
         ))
       )}
 
-      {/* Add Book Modal */}
-      {showAddBook && (
+      
+
+      {/* Settings Modal */}
+      {showTextbookSettings && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '80vh', overflowY: 'auto', marginBottom: '80px' }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>⚙️ Textbook Settings</h3>
+              <button onClick={() => setShowTextbookSettings(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>Semester Textbook Budget ($)</label>
+              <input
+                type="number"
+                value={textbookBudget.semesterBudget}
+                onChange={(e) => setTextbookBudget(prev => ({ ...prev, semesterBudget: parseFloat(e.target.value) || 0 }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <button
+              onClick={() => setShowTextbookSettings(false)}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: '#8b5cf6', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px' }}
+            >
+              Save & Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+})()}
+{/* Add Book Modal */}
+      {showAddBook && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '60px', zIndex: 9999
+        }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '80vh', overflowY: 'auto', marginBottom: '120px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0 }}>📚 Add Book</h3>
               <button onClick={() => setShowAddBook(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
@@ -2817,39 +2908,136 @@ const getMonthlyIncomeProjection = () => {
           </div>
         </div>
       )}
+{/* PHASE 5: Student Loan Awareness */}
+{(() => {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.7)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginTop: '16px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+      border: '1px solid rgba(255,255,255,0.5)'
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          🎓 Student Loans
+        </p>
+        <button
+          onClick={() => setShowAddLoan(true)}
+          style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}
+        >
+          + Add Loan
+        </button>
+      </div>
 
-      {/* Settings Modal */}
-      {showTextbookSettings && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0 }}>⚙️ Textbook Settings</h3>
-              <button onClick={() => setShowTextbookSettings(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
+      {/* Loan List */}
+      {studentLoans.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', margin: '16px 0' }}>
+          No loans added yet. Click + Add Loan to start.
+        </p>
+      ) : (
+        studentLoans.map(loan => {
+          const info = getLoanPayoffInfo(loan);
+          const years = Math.floor(info.months / 12);
+          const months = info.months % 12;
+          return (
+            <div key={loan.id} style={{
+              background: '#f9fafb', borderRadius: '12px', padding: '14px',
+              marginBottom: '12px', border: '1px solid #e5e7eb'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontWeight: '700', fontSize: '15px' }}>{loan.name}</span>
+                <button onClick={() => handleRemoveLoan(loan.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '18px' }}>×</button>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#6b7280' }}>Balance</span>
+                <span style={{ fontWeight: '700', color: '#ef4444' }}>${loan.balance.toLocaleString()}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#6b7280' }}>Interest Rate</span>
+                <span style={{ fontWeight: '600' }}>{loan.interestRate}%</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#6b7280' }}>Monthly Payment</span>
+                <span style={{ fontWeight: '600', color: '#8b5cf6' }}>${loan.monthlyPayment}/mo</span>
+              </div>
+              <div style={{ background: '#eff6ff', borderRadius: '10px', padding: '10px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '600' }}>Payoff in</span>
+                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#3b82f6' }}>{years > 0 ? `${years}y ` : ''}{months}mo</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>Total Interest</span>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#ef4444' }}>${info.totalInterest.toFixed(0)}</span>
+                </div>
+                {info.interestSaved > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '600' }}>💰 vs Min Payment</span>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#10b981' }}>Save ${info.interestSaved.toFixed(0)}</span>
+                  </div>
+                )}
+              </div>
+              {/* Payment slider */}
+              <div style={{ marginTop: '10px' }}>
+                <label style={{ fontSize: '12px', color: '#6b7280' }}>Adjust Payment: ${loan.monthlyPayment}/mo</label>
+                <input
+                  type="range"
+                  min={loan.minimumPayment}
+                  max={loan.minimumPayment * 3}
+                  value={loan.monthlyPayment}
+                  onChange={(e) => setStudentLoans(prev => prev.map(l => l.id === loan.id ? { ...l, monthlyPayment: parseFloat(e.target.value) } : l))}
+                  style={{ width: '100%', marginTop: '4px' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '11px', color: '#6b7280' }}>Min: ${loan.minimumPayment}</span>
+                  <span style={{ fontSize: '11px', color: '#6b7280' }}>Max: ${loan.minimumPayment * 3}</span>
+                </div>
+              </div>
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>Semester Textbook Budget ($)</label>
-              <input
-                type="number"
-                value={textbookBudget.semesterBudget}
-                onChange={(e) => setTextbookBudget(prev => ({ ...prev, semesterBudget: parseFloat(e.target.value) || 0 }))}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box' }}
-              />
-            </div>
-            <button
-              onClick={() => setShowTextbookSettings(false)}
-              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: '#8b5cf6', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px' }}
-            >
-              Save & Close
-            </button>
-          </div>
-        </div>
+          );
+        })
       )}
     </div>
   );
 })()}
+{/* Add Loan Modal */}
+      {showAddLoan && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '60px', zIndex: 9999 }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '80vh', overflowY: 'auto', marginBottom: '120px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>🎓 Add Loan</h3>
+              <button onClick={() => setShowAddLoan(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
+            </div>
+            {[
+              { label: 'Loan Name', key: 'name', type: 'text', placeholder: 'e.g. Federal Subsidized' },
+              { label: 'Current Balance ($)', key: 'balance', type: 'number', placeholder: 'e.g. 25000' },
+              { label: 'Interest Rate (%)', key: 'interestRate', type: 'number', placeholder: 'e.g. 5.5' },
+              { label: 'Minimum Payment ($)', key: 'minimumPayment', type: 'number', placeholder: 'e.g. 250' },
+              { label: 'Monthly Payment ($)', key: 'monthlyPayment', type: 'number', placeholder: 'Leave blank to use minimum' },
+            ].map(({ label, key, type, placeholder }) => (
+              <div key={key} style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{label}</label>
+                <input
+                  type={type}
+                  placeholder={placeholder}
+                  value={newLoan[key]}
+                  onChange={(e) => setNewLoan(prev => ({ ...prev, [key]: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e5e7eb', fontSize: '15px', boxSizing: 'border-box' }}
+                />
+              </div>
+            ))}
+            <button
+              onClick={handleAddLoan}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: '#8b5cf6', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px' }}
+            >
+              Add Loan
+            </button>
+          </div>
+        </div>
+      )}
 {/* PHASE 2: Meal Plan Section */}
 {(() => {
   const burnRate = getMealPlanBurnRate();
@@ -2960,12 +3148,13 @@ const getMonthlyIncomeProjection = () => {
 {showMealPlanSettings && (
   <div style={{
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 9999, overflowY: 'auto', paddingTop: '20px', paddingBottom: '20px'
   }}>
     <div style={{
       background: 'white', borderRadius: '20px', padding: '28px',
       width: '320px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
     }}>
+<div style={{ overflowY: 'auto', maxHeight: '70vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
   <h3 style={{ margin: 0 }}>⚙️ Meal Plan Settings</h3>
   <button
@@ -2974,6 +3163,7 @@ const getMonthlyIncomeProjection = () => {
   >
     ✕
   </button>
+</div>
 </div>
       {[
         { label: 'Dining Dollars Balance', key: 'diningDollars' },
