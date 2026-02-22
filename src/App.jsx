@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, Calendar, User, TrendingUp, Clock, Target, Award, Plus, ChevronLeft, ChevronRight, Coffee, Beer, ShoppingBag, Utensils, X, Check, Edit2, Trash2, Search, Filter } from 'lucide-react';
+import { DollarSign, Calendar, User, TrendingUp, Clock, Target, Award, Plus, ChevronLeft, ChevronRight, Coffee, Beer, ShoppingBag, Utensils, X, Check, Edit2, Trash2, Search, Filter, Brain } from 'lucide-react';
 
 export default function SpendhenApp() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -68,6 +68,58 @@ const [coachingEnabled, setCoachingEnabled] = useState(true);
 const [coachingStyle, setCoachingStyle] = useState('friendly');
 const [spendingStreak, setSpendingStreak] = useState(0);
 const [coachingMessage, setCoachingMessage] = useState(null);
+const [weeklyChallenge, setWeeklyChallenge] = useState({ category: '', limit: 0, accepted: false, result: null });
+// PHASE 6: Behavioral Coaching Helper
+const getCoachingTips = () => {
+  const tips = [];
+  const totalExpenses = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+  const totalIncome = incomeEntries.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
+  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
+
+  // Meal plan pacing tip
+  if (mealPlan && mealPlan.mealSwipes > 0) {
+    const swipesLeft = mealPlan.mealSwipes - mealPlan.mealSwipesUsed;
+    const swipePct = mealPlan.mealSwipesUsed / mealPlan.mealSwipes;
+    if (swipePct > 0.7) {
+      tips.push({ type: 'warning', icon: '🍽️', message: `Only ${swipesLeft} meal swipes left — pace yourself to semester end!` });
+    }
+  }
+
+  // Dining dollars tip
+  if (mealPlan && mealPlan.diningDollars > 0) {
+    const dollarsLeft = mealPlan.diningDollars - mealPlan.diningDollarsUsed;
+    const dollarPct = mealPlan.diningDollarsUsed / mealPlan.diningDollars;
+    if (dollarPct > 0.75) {
+      tips.push({ type: 'warning', icon: '💵', message: `$${dollarsLeft.toFixed(2)} dining dollars left — consider cooking a few meals this week.` });
+    }
+  }
+
+  // Savings rate tip
+  if (totalIncome > 0) {
+    if (savingsRate < 10) {
+      tips.push({ type: 'alert', icon: '📉', message: `You're saving only ${savingsRate.toFixed(0)}% of income. Try cutting one non-essential expense.` });
+    } else if (savingsRate >= 20) {
+      tips.push({ type: 'success', icon: '🌟', message: `Great job! You're saving ${savingsRate.toFixed(0)}% of your income this period.` });
+    }
+  }
+
+  // Spending streak encouragement
+  if (spendingStreak >= 3) {
+    tips.push({ type: 'success', icon: '🔥', message: `${spendingStreak}-day streak of staying under budget — keep it up!` });
+  } else if (spendingStreak === 0) {
+    tips.push({ type: 'nudge', icon: '💡', message: `Start a no-overspend streak today — even one day builds the habit.` });
+  }
+
+  // Style-based tone adjustment
+  if (coachingStyle === 'tough') {
+    return tips.map(t => ({ ...t, message: t.message.replace('consider', 'you need to').replace('Try', 'You must') }));
+  }
+  if (coachingStyle === 'gentle') {
+    return tips.map(t => ({ ...t, message: t.message + ' 😊' }));
+  }
+
+  return tips;
+};
 // PHASE 3: Textbook Budget
 const [textbookBudget, setTextbookBudget] = useState({
   semesterBudget: 300,
@@ -1995,6 +2047,64 @@ const handleRemoveLoan = (id) => {
               fontSize: '24px',
               border: '1px solid rgba(255, 255, 255, 0.2)'
             }}>🐔</div>
+{/* PHASE 6: Coaching Toggle */}
+<div style={{
+  background: 'rgba(255,255,255,0.7)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  padding: '24px',
+  marginBottom: '24px',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+  border: '1px solid rgba(255,255,255,0.5)'
+}}>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <span style={{ fontSize: '24px' }}>🐔</span>
+      <div>
+        <div style={{ fontWeight: '700', fontSize: '16px' }}>SpendHen Coach</div>
+        <div style={{ fontSize: '12px', color: '#6b7280' }}>Behavioral spending tips</div>
+      </div>
+    </div>
+    <div
+      onClick={() => setCoachingEnabled(prev => !prev)}
+      style={{
+        width: '48px', height: '26px', borderRadius: '13px', cursor: 'pointer',
+        background: coachingEnabled ? '#10b981' : '#d1d5db',
+        position: 'relative', transition: 'background 0.2s'
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: '3px',
+        left: coachingEnabled ? '25px' : '3px',
+        width: '20px', height: '20px', borderRadius: '50%',
+        background: 'white', transition: 'left 0.2s',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+      }} />
+    </div>
+  </div>
+  {coachingEnabled && (
+    <div>
+      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '10px' }}>Coaching style:</div>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {['gentle', 'balanced', 'tough'].map(style => (
+          <button
+            key={style}
+            onClick={() => setCoachingStyle(style)}
+            style={{
+              padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+              fontSize: '13px', fontWeight: '500',
+              background: coachingStyle === style ? '#f59e0b' : 'rgba(0,0,0,0.06)',
+              color: coachingStyle === style ? 'white' : '#374151',
+              transition: 'all 0.2s'
+            }}
+          >
+            {style === 'gentle' ? '😊 Gentle' : style === 'balanced' ? '⚖️ Balanced' : '💪 Tough Love'}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
             <div style={{ flex: 1 }}>
               <h1 style={{
                 margin: 0,
@@ -2441,7 +2551,31 @@ const handleRemoveLoan = (id) => {
             fontFamily: '"Inter", sans-serif'
           }}>Track and manage your spending limits</p>
         </div>
-
+{/* PHASE 6: Inline Budget Warnings */}
+{coachingEnabled && (() => {
+  const tips = getCoachingTips().filter(t => t.type === 'alert' || t.type === 'warning');
+  if (tips.length === 0) return null;
+  return (
+    <div style={{
+      background: 'rgba(251,191,36,0.08)',
+      border: '1px solid rgba(245,158,11,0.3)',
+      borderRadius: '16px',
+      padding: '14px 16px',
+      marginBottom: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px'
+    }}>
+      <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400e', marginBottom: '4px' }}>🐔 Heads up from SpendHen:</div>
+      {tips.map((tip, idx) => (
+        <div key={idx} style={{ fontSize: '13px', color: '#78350f', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+          <span>{tip.icon}</span>
+          <span>{tip.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+})()}
         <div style={{ padding: '20px 24px 24px 24px' }}>
           {/* Search and Sort Bar */}
           <div style={{
@@ -6618,6 +6752,64 @@ const getAdjustedLimit = (baseLimit) => {
           borderRadius: '0 0 24px 24px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)'
         }}>
+{/* PHASE 6: Coaching Toggle */}
+<div style={{
+  background: 'rgba(255,255,255,0.7)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  padding: '24px',
+  marginBottom: '24px',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+  border: '1px solid rgba(255,255,255,0.5)'
+}}>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <span style={{ fontSize: '24px' }}>🐔</span>
+      <div>
+        <div style={{ fontWeight: '700', fontSize: '16px' }}>SpendHen Coach</div>
+        <div style={{ fontSize: '12px', color: '#6b7280' }}>Behavioral spending tips</div>
+      </div>
+    </div>
+    <div
+      onClick={() => setCoachingEnabled(prev => !prev)}
+      style={{
+        width: '48px', height: '26px', borderRadius: '13px', cursor: 'pointer',
+        background: coachingEnabled ? '#10b981' : '#d1d5db',
+        position: 'relative', transition: 'background 0.2s'
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: '3px',
+        left: coachingEnabled ? '25px' : '3px',
+        width: '20px', height: '20px', borderRadius: '50%',
+        background: 'white', transition: 'left 0.2s',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+      }} />
+    </div>
+  </div>
+  {coachingEnabled && (
+    <div>
+      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '10px' }}>Coaching style:</div>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {['gentle', 'balanced', 'tough'].map(style => (
+          <button
+            key={style}
+            onClick={() => setCoachingStyle(style)}
+            style={{
+              padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+              fontSize: '13px', fontWeight: '500',
+              background: coachingStyle === style ? '#f59e0b' : 'rgba(0,0,0,0.06)',
+              color: coachingStyle === style ? 'white' : '#374151',
+              transition: 'all 0.2s'
+            }}
+          >
+            {style === 'gentle' ? '😊 Gentle' : style === 'balanced' ? '⚖️ Balanced' : '💪 Tough Love'}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
           <div style={{
             background: 'rgba(255, 255, 255, 0.15)',
             backdropFilter: 'blur(10px)',
@@ -7556,7 +7748,809 @@ const getAdjustedLimit = (baseLimit) => {
       </div>
     );
   };
+const renderCoachingPage = () => {
+  // Calculate category breakdown
+  const categoryTotals = expenses.reduce((acc, expense) => {
+    const cat = expense.category || 'Other';
+    acc[cat] = (acc[cat] || 0) + (parseFloat(expense.amount) || 0);
+    return acc;
+  }, {});
 
+  const totalSpending = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
+  const sortedCategories = Object.entries(categoryTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const totalIncome = incomeEntries.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
+  const savingsRate = totalIncome > 0 ? ((totalIncome - totalSpending) / totalIncome) * 100 : 0;
+
+  const getHenGreeting = () => {
+    const hour = new Date().getHours();
+    const base = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    if (coachingStyle === 'tough') return `${base}. Let's look at your numbers — no excuses today.`;
+    if (coachingStyle === 'gentle') return `${base}! 🌸 Let's see how you're doing and celebrate your wins!`;
+    return `${base}! Here's your personalized spending breakdown.`;
+  };
+
+  const getCategoryTip = (category, amount, pct) => {
+    if (coachingStyle === 'tough') {
+      if (pct > 30) return `${category} is eating ${pct.toFixed(0)}% of your budget. Cut it.`;
+      if (pct > 20) return `${category} at ${pct.toFixed(0)}% needs attention.`;
+      return `${category} looks controlled. Keep it that way.`;
+    }
+    if (coachingStyle === 'gentle') {
+      if (pct > 30) return `${category} is your biggest spend at ${pct.toFixed(0)}% — maybe worth a second look? 😊`;
+      if (pct > 20) return `${category} is taking up ${pct.toFixed(0)}% — you're doing great overall though!`;
+      return `${category} looks great — you're managing this really well! 🌟`;
+    }
+    if (pct > 30) return `${category} is your top expense at ${pct.toFixed(0)}% of spending — consider trimming here first.`;
+    if (pct > 20) return `${category} at ${pct.toFixed(0)}% is worth monitoring.`;
+    return `${category} is well-managed at ${pct.toFixed(0)}% of spending.`;
+  };
+
+  return (
+    <div style={{ paddingBottom: '120px' }}>
+      {/* Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(31,41,59,0.95) 0%, rgba(55,65,81,0.95) 100%)',
+        backdropFilter: 'blur(20px)',
+        padding: '40px 24px 32px 24px',
+        borderRadius: '0 0 24px 24px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+        marginBottom: '24px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <span style={{ fontSize: '40px' }}>🐔</span>
+          <div>
+            <h1 style={{ margin: 0, color: 'white', fontSize: '24px', fontWeight: '700' }}>SpendHen Coach</h1>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>{getHenGreeting()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: '0 24px' }}>
+{/* Quick Stats Row */}
+<div style={{
+  display: 'flex',
+  gap: '12px',
+  marginBottom: '20px'
+}}>
+  {[
+    { label: 'Expenses', value: expenses.length, icon: '📝' },
+    { label: 'Categories', value: Object.keys(categoryTotals).length, icon: '📂' },
+    { label: 'Streak', value: `${spendingStreak}d`, icon: '🔥' }
+  ].map(stat => (
+    <div key={stat.label} style={{
+      flex: 1,
+      background: 'rgba(255,255,255,0.7)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '16px',
+      padding: '14px 10px',
+      textAlign: 'center',
+      border: '1px solid rgba(255,255,255,0.5)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+    }}>
+      <div style={{ fontSize: '20px', marginBottom: '4px' }}>{stat.icon}</div>
+      <div style={{ fontSize: '20px', fontWeight: '800', color: '#1f2937' }}>{stat.value}</div>
+      <div style={{ fontSize: '11px', color: '#6b7280' }}>{stat.label}</div>
+    </div>
+  ))}
+</div>
+{/* Financial Health Score */}
+{(() => {
+  let score = 50;
+  const factors = [];
+
+  if (totalIncome > 0) {
+    if (savingsRate >= 20) { score += 20; factors.push({ text: 'Savings rate 20%+', positive: true }); }
+    else if (savingsRate >= 10) { score += 10; factors.push({ text: `Savings rate ${savingsRate.toFixed(0)}%`, positive: true }); }
+    else { score -= 10; factors.push({ text: 'Low savings rate', positive: false }); }
+  }
+
+  if (expenses.length >= 5) { score += 10; factors.push({ text: 'Actively tracking expenses', positive: true }); }
+  if (spendingStreak >= 3) { score += 10; factors.push({ text: `${spendingStreak}-day streak`, positive: true }); }
+  if (sortedCategories.length > 0 && (sortedCategories[0][1] / totalSpending) > 0.5) {
+    score -= 10; factors.push({ text: 'One category dominates spending', positive: false });
+  }
+  if (mealPlan && (mealPlan.mealSwipesUsed / mealPlan.mealSwipes) > 0.8) {
+    score -= 5; factors.push({ text: 'Meal swipes running low', positive: false });
+  }
+
+  score = Math.min(Math.max(score, 0), 100);
+
+  const scoreColor = score >= 75 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+  const scoreLabel = score >= 75 ? 'Healthy' : score >= 50 ? 'Fair' : 'Needs Work';
+
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.7)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '20px',
+      border: '1px solid rgba(255,255,255,0.5)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+    }}>
+      <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700' }}>💯 Financial Health Score</h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '16px' }}>
+        <div style={{
+          width: '80px', height: '80px', borderRadius: '50%',
+          background: `conic-gradient(${scoreColor} ${score * 3.6}deg, rgba(0,0,0,0.06) 0deg)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <div style={{
+            width: '62px', height: '62px', borderRadius: '50%',
+            background: 'white', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center'
+          }}>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: scoreColor, lineHeight: 1 }}>{score}</div>
+            <div style={{ fontSize: '10px', color: '#6b7280' }}>{scoreLabel}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+          {factors.map((f, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#374151' }}>
+              <span>{f.positive ? '✅' : '❌'}</span>
+              <span>{f.text}</span>
+            </div>
+          ))}
+          {factors.length === 0 && <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>Log income and expenses to calculate your score.</p>}
+        </div>
+      </div>
+      <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '8px' }}>
+        <div style={{ width: `${score}%`, background: scoreColor, height: '8px', borderRadius: '8px', transition: 'width 0.5s' }} />
+      </div>
+    </div>
+  );
+})()}
+{/* Hen Insight of the Day */}
+<div style={{
+  background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.08))',
+  border: '1px solid rgba(245,158,11,0.3)',
+  borderRadius: '20px',
+  padding: '20px',
+  marginBottom: '20px'
+}}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+    <span style={{ fontSize: '24px' }}>🐔</span>
+    <span style={{ fontWeight: '700', fontSize: '15px', color: '#92400e' }}>Insight of the Day</span>
+  </div>
+  <p style={{ margin: 0, fontSize: '14px', color: '#78350f', lineHeight: '1.6' }}>
+    {(() => {
+      if (expenses.length === 0) return "No expenses logged yet — add some spending and I'll give you personalized insights!";
+      if (sortedCategories.length > 0) {
+        const topCat = sortedCategories[0][0];
+        const topPct = totalSpending > 0 ? (sortedCategories[0][1] / totalSpending) * 100 : 0;
+        if (topPct > 40) return `${topCat} is dominating your budget at ${topPct.toFixed(0)}% of all spending. One category shouldn't own nearly half your money — time to rebalance.`;
+        if (topPct > 25) return `${topCat} leads your spending at ${topPct.toFixed(0)}%. That's manageable, but keep an eye on it as the month progresses.`;
+      }
+      if (savingsRate > 30) return `You're saving ${savingsRate.toFixed(0)}% of your income — that's genuinely impressive for a college student. Keep this habit and it compounds fast.`;
+      if (savingsRate < 0) return `You're spending more than you earn right now. Even cutting $10/week adds up to $520 a year — start small.`;
+      if (expenses.length < 3) return `You've only logged ${expenses.length} expense${expenses.length === 1 ? '' : 's'}. The more you track, the smarter your insights get — keep logging!`;
+      return `You have ${expenses.length} expenses across ${Object.keys(categoryTotals).length} categories. Diversified spending is healthy — no single category is overwhelming you.`;
+    })()}
+  </p>
+</div>
+        {/* Savings Rate Card */}
+        <div style={{
+          background: savingsRate >= 20 ? 'rgba(16,185,129,0.1)' : savingsRate >= 10 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+          border: `1px solid ${savingsRate >= 20 ? 'rgba(16,185,129,0.3)' : savingsRate >= 10 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
+          borderRadius: '20px',
+          padding: '20px',
+          marginBottom: '20px'
+        }}>
+          <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>Current Savings Rate</div>
+          <div style={{ fontSize: '36px', fontWeight: '800', color: savingsRate >= 20 ? '#10b981' : savingsRate >= 10 ? '#f59e0b' : '#ef4444' }}>
+            {totalIncome > 0 ? `${savingsRate.toFixed(1)}%` : 'No income logged'}
+          </div>
+          <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>
+            {savingsRate >= 20 ? '🌟 Excellent — above the 20% benchmark' : savingsRate >= 10 ? '⚠️ Decent — aim for 20%' : '📉 Below healthy threshold — review top expenses'}
+          </div>
+        </div>
+{/* Spending Forecast */}
+{(() => {
+  const today = new Date();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const dayOfMonth = today.getDate();
+  const daysLeft = daysInMonth - dayOfMonth;
+  const dailyBurnRate = totalSpending / (dayOfMonth || 1);
+  const projectedTotal = totalSpending + (dailyBurnRate * daysLeft);
+  const projectedSavings = totalIncome - projectedTotal;
+  const onTrack = projectedSavings > 0;
+
+  return (
+    <div style={{
+      background: onTrack ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+      border: `1px solid ${onTrack ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '20px'
+    }}>
+{/* Biggest Single Expense */}
+{expenses.length > 0 && (() => {
+  const biggest = expenses.reduce((max, e) => 
+    (parseFloat(e.amount) || 0) > (parseFloat(max.amount) || 0) ? e : max, expenses[0]);
+  const biggestAmt = parseFloat(biggest.amount) || 0;
+  const biggestPct = totalSpending > 0 ? (biggestAmt / totalSpending) * 100 : 0;
+
+  return (
+    <div style={{
+      background: 'rgba(239,68,68,0.06)',
+      border: '1px solid rgba(239,68,68,0.2)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '20px'
+    }}>
+      <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: '700' }}>🔍 Biggest Single Expense</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontWeight: '700', fontSize: '15px', color: '#1f2937' }}>{biggest.description || biggest.category || 'Unnamed'}</div>
+          <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{biggest.category} · {biggestPct.toFixed(0)}% of total spending</div>
+        </div>
+        <div style={{ fontSize: '24px', fontWeight: '800', color: '#ef4444' }}>${biggestAmt.toFixed(2)}</div>
+      </div>
+      <p style={{ margin: '10px 0 0 0', fontSize: '12px', color: '#78350f' }}>
+        🐔 {biggestPct > 30
+          ? `This single expense is ${biggestPct.toFixed(0)}% of your total spending — worth asking if it was necessary.`
+          : biggestPct > 15
+          ? `This is a notable expense at ${biggestPct.toFixed(0)}% of your total — keep it from recurring too often.`
+          : `This is your largest expense but at ${biggestPct.toFixed(0)}% it's not alarming. Stay consistent.`}
+      </p>
+    </div>
+  );
+})()}
+      <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>
+        📈 Month-End Forecast
+      </h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>Spent So Far</div>
+          <div style={{ fontSize: '20px', fontWeight: '800', color: '#ef4444' }}>${totalSpending.toFixed(0)}</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>Projected Total</div>
+          <div style={{ fontSize: '20px', fontWeight: '800', color: '#f59e0b' }}>${projectedTotal.toFixed(0)}</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>Projected Savings</div>
+          <div style={{ fontSize: '20px', fontWeight: '800', color: onTrack ? '#10b981' : '#ef4444' }}>
+            {totalIncome > 0 ? `$${projectedSavings.toFixed(0)}` : 'N/A'}
+          </div>
+        </div>
+      </div>
+      <div style={{
+        background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '8px', marginBottom: '8px'
+      }}>
+        <div style={{
+          width: `${Math.min((dayOfMonth / daysInMonth) * 100, 100)}%`,
+          background: onTrack ? '#10b981' : '#ef4444',
+          height: '8px', borderRadius: '8px'
+        }} />
+      </div>
+      <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
+        Day {dayOfMonth} of {daysInMonth} — ${dailyBurnRate.toFixed(2)}/day burn rate
+        {' '}{onTrack ? '✅ On track' : '⚠️ Overspend projected'}
+      </p>
+    </div>
+  );
+})()}
+{/* Income vs Spending Bar */}
+{totalIncome > 0 && (
+  <div style={{
+    background: 'rgba(255,255,255,0.7)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    padding: '20px',
+    marginBottom: '20px',
+    border: '1px solid rgba(255,255,255,0.5)',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+  }}>
+    <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700' }}>⚖️ Income vs Spending</h3>
+    <div style={{ marginBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <span style={{ fontSize: '13px', color: '#10b981', fontWeight: '600' }}>Income</span>
+        <span style={{ fontSize: '13px', fontWeight: '700' }}>${totalIncome.toFixed(2)}</span>
+      </div>
+      <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '10px' }}>
+        <div style={{ width: '100%', background: '#10b981', height: '10px', borderRadius: '8px' }} />
+      </div>
+    </div>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <span style={{ fontSize: '13px', color: '#ef4444', fontWeight: '600' }}>Spending</span>
+        <span style={{ fontSize: '13px', fontWeight: '700' }}>${totalSpending.toFixed(2)}</span>
+      </div>
+      <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '10px' }}>
+        <div style={{
+          width: `${Math.min((totalSpending / totalIncome) * 100, 100)}%`,
+          background: totalSpending > totalIncome ? '#ef4444' : '#f59e0b',
+          height: '10px', borderRadius: '8px'
+        }} />
+      </div>
+    </div>
+    <p style={{ margin: '10px 0 0 0', fontSize: '12px', color: '#6b7280' }}>
+      {totalSpending <= totalIncome
+        ? `You have $${(totalIncome - totalSpending).toFixed(2)} remaining this period`
+        : `⚠️ You are $${(totalSpending - totalIncome).toFixed(2)} over your income`}
+    </p>
+  </div>
+)}
+{/* Smart Saving Suggestions */}
+<div style={{
+  background: 'rgba(139,92,246,0.06)',
+  border: '1px solid rgba(139,92,246,0.2)',
+  borderRadius: '20px',
+  padding: '20px',
+  marginBottom: '20px'
+}}>
+  <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>💡 Smart Saving Suggestions</h3>
+  {(() => {
+    const suggestions = [];
+
+    if (sortedCategories.length > 0) {
+      const topCat = sortedCategories[0][0];
+      const topAmt = sortedCategories[0][1];
+      suggestions.push({
+        icon: '✂️',
+        text: `Cut ${topCat} by 15% and save $${(topAmt * 0.15).toFixed(2)} this month.`
+      });
+    }
+
+    if (mealPlan && mealPlan.mealSwipes > 0) {
+      const swipesLeft = mealPlan.mealSwipes - mealPlan.mealSwipesUsed;
+      if (swipesLeft > 10) {
+        suggestions.push({
+          icon: '🍽️',
+          text: `You have ${swipesLeft} meal swipes left — use them before spending on dining out.`
+        });
+      }
+    }
+
+    if (savingsRate < 20 && totalIncome > 0) {
+      const needed = ((0.2 * totalIncome) - (totalIncome - totalSpending)).toFixed(2);
+      suggestions.push({
+        icon: '🎯',
+        text: `To hit 20% savings, reduce spending by $${needed} this period.`
+      });
+    }
+
+    if (sortedCategories.length >= 2) {
+      const secondCat = sortedCategories[1][0];
+      const secondAmt = sortedCategories[1][1];
+      suggestions.push({
+        icon: '👀',
+        text: `${secondCat} is your #2 expense at $${secondAmt.toFixed(2)} — a good secondary target to trim.`
+      });
+    }
+
+    if (suggestions.length === 0) {
+      return <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>Log expenses to get personalized suggestions!</p>;
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {suggestions.slice(0, 3).map((s, idx) => (
+          <div key={idx} style={{
+            display: 'flex', gap: '10px', alignItems: 'flex-start',
+            padding: '10px 12px', borderRadius: '12px',
+            background: 'rgba(139,92,246,0.06)',
+            border: '1px solid rgba(139,92,246,0.15)'
+          }}>
+            <span style={{ fontSize: '18px' }}>{s.icon}</span>
+            <span style={{ fontSize: '13px', color: '#374151', lineHeight: '1.5' }}>{s.text}</span>
+          </div>
+        ))}
+      </div>
+    );
+  })()}
+</div>
+{/* Monthly Budget Pace */}
+{totalIncome > 0 && (() => {
+  const today = new Date();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const dayOfMonth = today.getDate();
+  const expectedSpendingPct = (dayOfMonth / daysInMonth) * 100;
+  const actualSpendingPct = (totalSpending / totalIncome) * 100;
+  const diff = actualSpendingPct - expectedSpendingPct;
+  const ahead = diff < 0;
+
+  return (
+    <div style={{
+      background: ahead ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+      border: `1px solid ${ahead ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '20px'
+    }}>
+      <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>🏃 Monthly Budget Pace</h3>
+      <div style={{ marginBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>Expected pace</span>
+          <span style={{ fontSize: '12px', color: '#6b7280' }}>{expectedSpendingPct.toFixed(0)}%</span>
+        </div>
+        <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '8px', marginBottom: '8px' }}>
+          <div style={{ width: `${expectedSpendingPct}%`, background: '#6b7280', height: '8px', borderRadius: '8px' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span style={{ fontSize: '12px', color: ahead ? '#10b981' : '#ef4444' }}>Your pace</span>
+          <span style={{ fontSize: '12px', color: ahead ? '#10b981' : '#ef4444' }}>{actualSpendingPct.toFixed(0)}%</span>
+        </div>
+        <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '8px' }}>
+          <div style={{
+            width: `${Math.min(actualSpendingPct, 100)}%`,
+            background: ahead ? '#10b981' : '#ef4444',
+            height: '8px', borderRadius: '8px'
+          }} />
+        </div>
+      </div>
+      <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#6b7280' }}>
+        {ahead
+          ? `✅ You're ${Math.abs(diff).toFixed(0)}% under expected pace — great discipline!`
+          : `⚠️ You're ${diff.toFixed(0)}% over expected pace for day ${dayOfMonth} of ${daysInMonth}`}
+      </p>
+    </div>
+  );
+})()}
+        {/* Top Spending Categories */}
+        <div style={{
+          background: 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '20px',
+          padding: '20px',
+          marginBottom: '20px',
+          border: '1px solid rgba(255,255,255,0.5)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+        }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700' }}>📊 Your Top Spending Categories</h3>
+          {sortedCategories.length === 0 ? (
+            <p style={{ color: '#6b7280', fontSize: '14px' }}>No expenses logged yet. Add some to see your breakdown.</p>
+          ) : (
+            sortedCategories.map(([cat, amount], idx) => {
+              const pct = totalSpending > 0 ? (amount / totalSpending) * 100 : 0;
+              const colors = ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#10b981'];
+              return (
+                <div key={cat} style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: '600', fontSize: '14px' }}>#{idx + 1} {cat}</span>
+                    <span style={{ fontWeight: '700', fontSize: '14px' }}>${amount.toFixed(2)} <span style={{ color: '#6b7280', fontWeight: '400' }}>({pct.toFixed(0)}%)</span></span>
+                  </div>
+                  <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '8px', marginBottom: '6px' }}>
+                    <div style={{ width: `${pct}%`, background: colors[idx], height: '8px', borderRadius: '8px', transition: 'width 0.5s' }} />
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>🐔 {getCategoryTip(cat, amount, pct)}</p>
+                </div>
+              );
+            })
+          )}
+        </div>
+{/* Recurring Expense Detector */}
+{expenses.length > 0 && (() => {
+  const categoryCounts = expenses.reduce((acc, e) => {
+    const cat = e.category || 'Other';
+    acc[cat] = (acc[cat] || 0) + 1;
+    return acc;
+  }, {});
+
+  const recurring = Object.entries(categoryCounts)
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  if (recurring.length === 0) return null;
+
+  return (
+    <div style={{
+      background: 'rgba(59,130,246,0.06)',
+      border: '1px solid rgba(59,130,246,0.2)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '20px'
+    }}>
+      <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>🔁 Spending Habits Detected</h3>
+      <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#6b7280' }}>
+        Categories you spend in repeatedly — these are your habits, good or bad.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {recurring.map(([cat, count]) => {
+          const total = categoryTotals[cat] || 0;
+          const avg = total / count;
+          return (
+            <div key={cat} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '10px 12px', borderRadius: '12px',
+              background: 'rgba(59,130,246,0.06)',
+              border: '1px solid rgba(59,130,246,0.12)'
+            }}>
+              <div>
+                <div style={{ fontWeight: '600', fontSize: '14px' }}>{cat}</div>
+                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                  {count}x logged · ${avg.toFixed(2)} avg per transaction
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: '700', fontSize: '14px', color: '#3b82f6' }}>${total.toFixed(2)}</div>
+                <div style={{ fontSize: '11px', color: '#6b7280' }}>total</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p style={{ margin: '12px 0 0 0', fontSize: '12px', color: '#6b7280' }}>
+        🐔 {recurring.length >= 3
+          ? `You have ${recurring.length} spending habits — awareness is the first step to changing them.`
+          : `These repeated expenses are becoming patterns — intentional or not?`}
+      </p>
+    </div>
+  );
+})()}
+{/* Spending by Day of Week */}
+{expenses.length > 0 && (() => {
+  const dayTotals = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  expenses.forEach(e => {
+    if (e.date) {
+      const day = dayNames[new Date(e.date).getDay()];
+      dayTotals[day] = (dayTotals[day] || 0) + (parseFloat(e.amount) || 0);
+    }
+  });
+
+  const maxDay = Math.max(...Object.values(dayTotals));
+  const topDay = dayNames.find(d => dayTotals[d] === maxDay);
+
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.7)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '20px',
+      border: '1px solid rgba(255,255,255,0.5)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+    }}>
+      <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700' }}>📅 Spending by Day of Week</h3>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '80px', marginBottom: '8px' }}>
+        {dayNames.map(day => {
+          const amt = dayTotals[day];
+          const heightPct = maxDay > 0 ? (amt / maxDay) * 100 : 0;
+          const isTop = day === topDay && maxDay > 0;
+          return (
+            <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
+              <div style={{
+                width: '100%', borderRadius: '6px 6px 0 0',
+                height: `${Math.max(heightPct, 4)}%`,
+                background: isTop ? '#ef4444' : '#3b82f6',
+                transition: 'height 0.5s'
+              }} />
+              <div style={{ fontSize: '10px', color: '#6b7280' }}>{day}</div>
+            </div>
+          );
+        })}
+      </div>
+      <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#6b7280' }}>
+        🐔 {maxDay > 0
+          ? `${topDay} is your biggest spending day at $${maxDay.toFixed(2)} — is that intentional?`
+          : `Log expenses with dates to see your spending patterns by day.`}
+      </p>
+    </div>
+  );
+})()}
+        {/* Spending DNA */}
+        <div style={{
+          background: 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '20px',
+          padding: '20px',
+          marginBottom: '20px',
+          border: '1px solid rgba(255,255,255,0.5)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+        }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700' }}>🧬 Your Spending DNA</h3>
+          <div style={{ display: 'flex', height: '24px', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
+            {sortedCategories.map(([cat, amount], idx) => {
+              const pct = totalSpending > 0 ? (amount / totalSpending) * 100 : 0;
+              const colors = ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#10b981'];
+              return <div key={cat} style={{ width: `${pct}%`, background: colors[idx] }} />;
+            })}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {sortedCategories.map(([cat], idx) => {
+              const colors = ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#10b981'];
+              return (
+                <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#374151' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors[idx] }} />
+                  {cat}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+{/* Discretionary vs Essential Split */}
+{expenses.length > 0 && (() => {
+  const essentialCategories = ['Groceries', 'Rent', 'Utilities', 'Transport', 'Health', 'Tuition', 'Books', 'Insurance'];
+  
+  let essentialTotal = 0;
+  let discretionaryTotal = 0;
+
+  Object.entries(categoryTotals).forEach(([cat, amt]) => {
+    if (essentialCategories.some(e => cat.toLowerCase().includes(e.toLowerCase()))) {
+      essentialTotal += amt;
+    } else {
+      discretionaryTotal += amt;
+    }
+  });
+
+  const essentialPct = totalSpending > 0 ? (essentialTotal / totalSpending) * 100 : 0;
+  const discretionaryPct = totalSpending > 0 ? (discretionaryTotal / totalSpending) * 100 : 0;
+
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.7)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '20px',
+      border: '1px solid rgba(255,255,255,0.5)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+    }}>
+      <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>🧠 Needs vs Wants</h3>
+      <div style={{ display: 'flex', height: '16px', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px' }}>
+        <div style={{ width: `${essentialPct}%`, background: '#10b981', transition: 'width 0.5s' }} />
+        <div style={{ width: `${discretionaryPct}%`, background: '#f59e0b', transition: 'width 0.5s' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }} />
+          <span style={{ fontSize: '13px', color: '#374151' }}>Needs: <strong>${essentialTotal.toFixed(2)}</strong> ({essentialPct.toFixed(0)}%)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }} />
+          <span style={{ fontSize: '13px', color: '#374151' }}>Wants: <strong>${discretionaryTotal.toFixed(2)}</strong> ({discretionaryPct.toFixed(0)}%)</span>
+        </div>
+      </div>
+      <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
+        🐔 {discretionaryPct > 60
+          ? `Over 60% discretionary spending is a red flag — focus on needs first.`
+          : discretionaryPct > 40
+          ? `Wants are taking ${discretionaryPct.toFixed(0)}% of your budget — the 50/30/20 rule suggests keeping this under 30%.`
+          : `Good balance — your essentials are covered and discretionary spending is controlled.`}
+      </p>
+    </div>
+  );
+})()}
+{/* Micro-Challenge */}
+<div style={{
+  background: 'rgba(139,92,246,0.08)',
+  border: '1px solid rgba(139,92,246,0.25)',
+  borderRadius: '20px',
+  padding: '20px',
+  marginBottom: '20px'
+}}>
+  <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>⚡ Weekly Challenge</h3>
+  {sortedCategories.length === 0 ? (
+    <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>Log some expenses and the hen will assign you a challenge!</p>
+  ) : (() => {
+    const topCat = sortedCategories[0][0];
+    const topAmt = sortedCategories[0][1];
+    const challengeLimit = parseFloat((topAmt * 0.8).toFixed(2));
+    return (
+      <div>
+        <p style={{ fontSize: '14px', color: '#374151', marginTop: 0 }}>
+          🐔 Your top category is <strong>{topCat}</strong> at <strong>${topAmt.toFixed(2)}</strong>. 
+          This week's challenge: keep <strong>{topCat}</strong> under <strong>${challengeLimit}</strong> (20% less than usual).
+        </p>
+        {!weeklyChallenge.accepted ? (
+          <button
+            onClick={() => setWeeklyChallenge({ category: topCat, limit: challengeLimit, accepted: true, result: null })}
+            style={{
+              background: '#8b5cf6', color: 'white', border: 'none',
+              borderRadius: '12px', padding: '10px 20px',
+              fontSize: '14px', fontWeight: '600', cursor: 'pointer', width: '100%'
+            }}
+          >
+            Accept Challenge 💪
+          </button>
+        ) : (
+          <div>
+            <div style={{
+              background: 'rgba(139,92,246,0.1)', borderRadius: '12px',
+              padding: '12px', marginBottom: '10px', fontSize: '13px', color: '#6d28d9'
+            }}>
+              ✅ Challenge accepted! Keep <strong>{weeklyChallenge.category}</strong> under <strong>${weeklyChallenge.limit}</strong> this week.
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setWeeklyChallenge(prev => ({ ...prev, result: 'pass' }))}
+                style={{
+                  flex: 1, padding: '8px', borderRadius: '10px', border: 'none',
+                  background: weeklyChallenge.result === 'pass' ? '#10b981' : 'rgba(16,185,129,0.1)',
+                  color: weeklyChallenge.result === 'pass' ? 'white' : '#10b981',
+                  fontWeight: '600', cursor: 'pointer', fontSize: '13px'
+                }}
+              >
+                ✅ I passed!
+              </button>
+              <button
+                onClick={() => setWeeklyChallenge(prev => ({ ...prev, result: 'fail' }))}
+                style={{
+                  flex: 1, padding: '8px', borderRadius: '10px', border: 'none',
+                  background: weeklyChallenge.result === 'fail' ? '#ef4444' : 'rgba(239,68,68,0.1)',
+                  color: weeklyChallenge.result === 'fail' ? 'white' : '#ef4444',
+                  fontWeight: '600', cursor: 'pointer', fontSize: '13px'
+                }}
+              >
+                ❌ I didn't
+              </button>
+            </div>
+            {weeklyChallenge.result === 'pass' && (
+              <p style={{ marginTop: '10px', fontSize: '13px', color: '#10b981', fontWeight: '600' }}>
+                🎉 Amazing work! Your streak is building — next week we go harder.
+              </p>
+            )}
+            {weeklyChallenge.result === 'fail' && (
+              <p style={{ marginTop: '10px', fontSize: '13px', color: '#ef4444', fontWeight: '600' }}>
+                {coachingStyle === 'tough' ? "No excuses. Reset and try again this week." : coachingStyle === 'gentle' ? "That's okay! Every attempt builds awareness 😊 Try again!" : "Don't sweat it — reset and give it another shot this week."}
+              </p>
+            )}
+            {weeklyChallenge.result && (
+              <button
+                onClick={() => setWeeklyChallenge({ category: '', limit: 0, accepted: false, result: null })}
+                style={{
+                  marginTop: '8px', width: '100%', padding: '8px', borderRadius: '10px',
+                  border: '1px solid rgba(0,0,0,0.1)', background: 'transparent',
+                  fontSize: '13px', color: '#6b7280', cursor: 'pointer'
+                }}
+              >
+                Reset Challenge
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  })()}
+</div>
+{/* No-Spend Day Tracker */}
+<div style={{
+  background: 'rgba(255,255,255,0.7)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  padding: '20px',
+  marginBottom: '20px',
+  border: '1px solid rgba(255,255,255,0.5)',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+}}>
+  <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700' }}>🚫 No-Spend Day Tracker</h3>
+  <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#6b7280' }}>
+    Track days where you spend $0. Even 2-3 per week builds serious discipline.
+  </p>
+  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+    {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(day => {
+      const isNoSpend = spendingStreak > 0 && 
+        ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(day) < spendingStreak;
+      return (
+        <div key={day} style={{
+          flex: '1', minWidth: '36px', textAlign: 'center',
+          padding: '8px 4px', borderRadius: '10px',
+          background: isNoSpend ? 'rgba(16,185,129,0.15)' : 'rgba(0,0,0,0.04)',
+          border: `1px solid ${isNoSpend ? 'rgba(16,185,129,0.3)' : 'rgba(0,0,0,0.08)'}`,
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>{day}</div>
+          <div style={{ fontSize: '16px' }}>{isNoSpend ? '✅' : '·'}</div>
+        </div>
+      );
+    })}
+  </div>
+  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
+    🔥 Current streak: <strong>{spendingStreak} day{spendingStreak !== 1 ? 's' : ''}</strong>
+    {spendingStreak >= 3 ? ' — incredible discipline!' : spendingStreak >= 1 ? ' — keep it going!' : ' — start today!'}
+  </p>
+</div>
+      </div>
+    </div>
+  );
+};
   return (
     <div style={{
       maxWidth: '430px',
@@ -7582,6 +8576,7 @@ const getAdjustedLimit = (baseLimit) => {
           {currentPage === 'goals' && renderGoalsPage()}
           {currentPage === 'calendar' && renderCalendarPage()}
           {currentPage === 'profile' && renderProfilePage()}
+	  {currentPage === 'coaching' && renderCoachingPage()}
 
           <div style={{
             position: 'fixed',
@@ -7604,6 +8599,7 @@ const getAdjustedLimit = (baseLimit) => {
             <NavButton icon={DollarSign} label="Finance" page="finance" currentPage={currentPage} onClick={() => setCurrentPage('finance')} />
             <NavButton icon={Award} label="Plan" page="goals" currentPage={currentPage} onClick={() => setCurrentPage('goals')} />
             <NavButton icon={Target} label="Calendar" page="calendar" currentPage={currentPage} onClick={() => setCurrentPage('calendar')} />
+	    <NavButton icon={Brain} label="Coaching" page="coaching" currentPage={currentPage} onClick={() => setCurrentPage('coaching')} />
             <NavButton icon={User} label="Profile" page="profile" currentPage={currentPage} onClick={() => setCurrentPage('profile')} />
           </div>
         </>
